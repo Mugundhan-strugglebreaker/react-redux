@@ -1,0 +1,22 @@
+React-Redux notes
+
+	Redux is state management library and used for state management
+ 
+Three main concepts:
+	Store —> Global store
+	Actions —> it tells the redux what actions to do with the state
+	Reducer —> Taking the actions and make the update in state
+            
+Store:
+	Store is made up of multiple slices and each responsible of certain domain in the application means that slice will hold the state that specifically related to a component.
+
+Actions:
+       	Actions that tells to redux to do with the state for example
+	const increment = { type: INCREMENT , payload: 1};
+	const decrement = { type: DECREMENT , payload: 1};\
+	this actions is used against the state called number and doing increment and decrement operations.
+	payload is optional and it is used when it is necessary to pass a payload to make an action for the state.
+
+Reducers
+	Reducers are essentially in receiving the actions and Make the update in the redux store and recognise the type of the action by using type and make the update accordingly and use payload to use specific update
+	reducer never gone mutate the state means it just copies the old state and making the update in the specific state and replace the entire state as whole.
