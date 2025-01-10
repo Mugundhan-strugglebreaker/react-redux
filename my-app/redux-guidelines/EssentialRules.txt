@@ -1,0 +1,43 @@
+
+Priority A Rules: ( Essentials )
+	
+	1.Do not Mutate State:
+		Actual mutation of state should be avoided.
+                  For example:
+		Wrong way: Actual mutation of state (Should not be used)
+        		 function reducer(state={} , action) {
+			switch(action.type) {
+				case ‘Add’:
+					state.add = 1 // mutation of state
+					return state;
+                               default: return state } }
+
+		Correct way:
+		 function reducer(state={} , action) {
+			switch(action.type) {
+				case ‘Add’:
+					return {
+					   …state, // creating new object so mutation does not happens
+					   add = 1 
+					}
+                               default: return state } }
+	   	
+
+		Note : while using createSlice it immer under the hood allowing us to write “mutating” code safely
+
+	2.Reducers Must not have Side effects:
+		Reducers should only depends on state and action and do the desire calculation and return new state.
+		They must not execute any kind of asynchronous logic (AJAX calls, timeouts, promises), generate random values (Date.now(), Math.random()), modify variables outside the reducer, or run other code that affects things outside the scope of the reducer function.
+
+	3.Do Not Put Non-Serializable Values in States or Actions
+		Serializable: A value that can be converted to JSON and back without losing its meaning (e.g., objects, arrays, strings, numbers, booleans, null).
+		Non-Serializable: Values like Promise, Symbol, Map, Set, function, or custom class instances that can't be serialized to JSON properly.
+
+		Do not put non-serializable objects in redux 
+		const initialState = { todos: [], status: 'idle', metadata: new 	Map() // ❌ Non-serializable value }; —> Do not use like this
+		const initialState = { todos: [], metadata: {} // Use a plain object instead of Map }; —> should be something like this.
+
+		
+	4.Only one redux store per App
+		A standard Redux application should only have a single Redux store instance, which will be used by the whole application. It should typically be defined in a separate file such as store.js.
+		Ideally, no app logic will import the store directly. It should be passed to a React component tree via <Provider>, or referenced indirectly via middleware such as thunks. In rare cases, you may need to import it into other logic files, but this should be a last resort.
