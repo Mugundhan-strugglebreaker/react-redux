@@ -1,0 +1,273 @@
+Priority B Rules: (Strongly Recommended)
+
+	1.Use redux toolkit for writing redux logic 
+		Implemented simple redux application in this GitHub https://github.com/Mugundhan-strugglebreaker/react-redux
+	2.Use immer for writing immutable update:
+		Immer will do draft our state while we make any changes. Currently we are using createSlice that has in-build immer concept.
+	3.Structure files as feature folders with single-file logic
+		we recommend that most applications should structure files using a "feature folder" approach (all files for a feature in the same folder). Within a given feature folder, the Redux logic for that feature should be written as a single "slice" file, preferably using the Redux Toolkit createSlice API. 
+	An example folder structure might look something like:
+    * /src
+        * index.tsx: Entry point file that renders the React component tree
+        * /app
+            * store.ts: store setup
+            * rootReducer.ts: root reducer (optional)
+            * App.tsx: root React component
+        * /common: hooks, generic components, utils, etc
+        * /features: contains all "feature folders"
+            * /todos: a single feature folder
+                * todosSlice.ts: Redux reducer logic and associated actions
+				Todos.tsx: a React component
+
+	4.Put as much logic as possible in reducers
+		Wherever possible, try to put as much of the logic for calculating a new state into the appropriate reducer, rather than in the code that prepares and dispatches the action
+	
+		// Click handler:
+		const onTodoClicked = (id) => {
+		    dispatch({type: "todos/toggleTodo", payload: {id}})
+		}
+
+		// Reducer:
+		case "todos/toggleTodo": {
+		    return state.map(todo => {
+		        if(todo.id !== action.payload.id) return todo;
+
+			        return {...todo, completed: !todo.completed };
+			   })
+		}
+
+	5.Reducer should Own the state shape
+		The redux root state is owned and calculated by the single root reducer function.
+		For maintainability that reducer is intended to split up by key/value “slices”, with each “slice reducer” being responsible for providing an initial value and calculating the updates to that slices of the state.
+
+		In addition, slice reducers should exercise control over what other values are returned as part of the calculated state. Minimize the use of "blind spreads/returns" like return action.payload or return {...state, ...action.payload}, because those rely on the code that dispatched the action to correctly format the contents, and the reducer effectively gives up its ownership of what that state looks like. That can lead to bugs if the action contents are not correct.
+
+	6.Name state slices based on the Stored data
+		Reducers are splitting based on the slices of state and combineReducers is the standard function for joining those slices reducers into a larger reducer function.
+		avoid using word “reducer” in the key names
+		
+		Not like this —> { userReducers: {} , postsReducers: {} }
+		like this —> { users: {} , posts: {} }
+
+	7.Organize state Structure based on Data Types, Not components
+		Root state slices should be defined and named based on the major data type or area of functionality not based on the components.
+
+		like this { auth , posts, users, ui}
+		not like this { loginScreen , userList , postLists}
+
+	8.Treat Reducer as State Machine:
+		The concept you’re describing emphasizes using Redux reducers as "state machines" to ensure that the current state is considered alongside the dispatched action when calculating the next state. Let’s walk through an example to understand the issue and the proposed solution.
+
+
+		Not like this:
+
+		const initialState = {
+  			status: 'idle', // can be 'idle', 'loading', 'succeeded', or 'failed'
+  			data: null,
+			error: null,
+		};
+
+		function reducer(state = initialState, action) {
+		 	 switch (action.type) {
+   				 case 'FETCH_STARTED': // doesn’t check the current state is idle
+     					 return { ...state, status: 'loading', error: null };
+    				case 'FETCH_SUCCEEDED': // doesn’t check the current state is loading
+    					  return { ...state, status: 'succeeded', data: action.payload, error: null };
+  				 case 'FETCH_FAILED': // doesn’t check the current state is loading
+      					  return { ...state, status: 'failed', error: action.payload };
+   				 default:
+    					  return state;
+  			}
+		}
+
+		Should like this:
+		
+		function reducer(state = initialState, action) {
+			  switch (action.type) {
+				    case 'FETCH_STARTED':
+					      if (state.status === 'idle') {
+     							   return { ...state, status: 'loading', error: null };
+     						}
+      						// Ignore action if it's not valid for the current state
+      				              return state;
+
+        			  case 'FETCH_SUCCEEDED':
+      						if (state.status === 'loading') {
+        						return { ...state, status: 'succeeded', data: action.payload, error: 							null };
+     						 }
+  						  return state;
+
+    				 case 'FETCH_FAILED':
+    						  if (state.status === 'loading') {
+   							     return { ...state, status: 'failed', error: action.payload };
+    						  }
+						   return state;
+
+   				 default:
+    						  return state;
+ 			 }
+		}
+
+	9.Normalize Complex Nested/Relational State:
+		Many applications need to cache complex data in the store. That data is often received in a nested form from an API, or has relations between different entities in the data (such as a blog that contains Users, Posts, and Comments).
+		Prefer storing that data in a "normalized" form in the store. This makes it easier to look up items based on their ID and update a single item in the store, and ultimately leads to better performance patterns.
+
+	10.Keep State Minimal and Derive Additional Values
+		Whenever possible, keep the actual data in the Redux store as minimal as possible, and derive additional values from that state as needed. 
+
+		This has benefits:
+			The actual state is easier to read.
+			Less logic is needed to calculate those additional values and keep them in sync with rest of the data.
+			The Original state is still there as a reference and isn’t being replaced.
+
+	11.Model Actions as Events, Not Setters
+		Actions describing events not on setters
+			like this —> type: “food/orderAdded” ,  payload: { pizza: 1 , coke: 1 }
+			not like this —> type: “orders/setPizzaOrdered , payload: { amount : state.pizza + 1 }
+
+	12.Write Meaningful Action names:
+		action.type has two main purposes:
+			1.Reducer logic check the action type to see if this action should be handled to calculate a new state
+			2.Action types are shown in the redux devtools history log if you read
+		So Action should be written with meaningful , informative and descriptive type fields
+
+	13.Allow many reducers to respond to the same action:
+		Encouraged to have many reducers functions all handle the same action separately if possible.
+
+		// userReducer.js
+		const userReducer = (state = initialState.user, action) => {
+			  switch (action.type) {
+				    case 'USER_UPDATED':
+					      return {
+  						      ...state,
+       						     name: action.payload.name,
+      						};
+    				   default:
+  					    return state;
+			  }
+		 };
+
+		// notificationsReducer.js
+		const notificationsReducer = (state = initialState.notifications, action) => {
+			  switch (action.type) {
+   					 case 'USER_UPDATED':
+   						   return [
+    							    ...state,
+    							    `User's name was updated to ${action.payload.name}`,
+    						  ];
+    					default:
+  					    return state;
+			  }
+		};
+
+	14.Avoid Dispatching Many Actions Sequentially:
+		Avoid dispatching many actions in a row to accomplish a larger conceptual "transaction". This is legal, but will usually result in multiple relatively expensive UI updates, and some of the intermediate states could be potentially invalid by other parts of the application logic
+		
+		For example, if actions "UPDATE_A", "UPDATE_B", and "UPDATE_C" are dispatched in a row, and some code is expecting all three of a, b, and c to be updated together, the state after the first two dispatches will effectively be incomplete because only one or two of them has been updated.
+
+		if multiple dispatched becomes true necessary it is good to use batch() from react-redux.
+
+	15.Evaluate Where Each Piece of State Should Live:
+		The "Three Principles of Redux" says that "the state of your whole application is stored in a single tree". This phrasing has been over-interpreted. It does not mean that literally every value in the entire app must be kept in the Redux store. Instead, there should be a single place to find all values that you consider to be global and app-wide. Values that are "local" should generally be kept in the nearest UI component instead.
+
+	16.Use the react-redux hooks API:
+		Prefer using the React-Redux hooks API (useSelector and useDispatch) as the default way to interact with a Redux store from your React components. While the classic connect API still works fine and will continue to be supported, the hooks API is generally easier to use in several ways. The hooks have less indirection, less code to write, and are simpler to use with TypeScript than connect is.
+
+	17.Connect More Components to Read Data from the Store:
+		Prefer having more UI components subscribed to the Redux store and reading data at a more granular level. 
+		
+		Not like this
+
+		import React from 'react';
+		import { useSelector } from 'react-redux';
+
+		const UserList = () => {
+			  // Retrieve the entire users array
+			  const users = useSelector((state) => state.users);
+
+ 			 return (
+ 				   <ul>
+  				    {users.map((user) => (
+  					      <li key={user.id}>
+          						{user.name} - {user.email}
+      						  </li>
+     					 ))}
+    					</ul>
+ 			 );
+		};
+
+		export default UserList;
+
+		like this:
+
+		import React from 'react';
+		import { useSelector } from 'react-redux';
+
+		const UserList = () => {
+ 			 // Retrieve the entire users array
+  			const users = useSelector((state) => state.users);
+
+ 			 return (
+   					 <ul>
+      						{users.map((user) => (
+       							 <li key={user.id}>
+         	 						{user.name} - {user.email}
+        						 </li>
+      						))}
+    					</ul>
+  				);
+			};
+
+			export default UserList;
+
+			import React from 'react';
+			import { useSelector } from 'react-redux';
+
+			const UserListItem = ({ userId }) => {
+ 				 // Retrieve only the specific user's data by ID
+  					const user = useSelector((state) =>
+  						  state.users.find((user) => user.id === userId)
+  					);
+
+ 					 return (
+						   <li>
+      								{user.name} - {user.email}
+    						  </li>
+ 					 );
+			};
+
+			export default UserListItem;
+
+	18.Use the Object shorthand form of mapDispatch with connect:
+		The object shorthand automatically binds action creators to dispatch, making the code cleaner.
+		import React from 'react';
+		import { connect } from 'react-redux';
+		import { increment, decrement } from './actions';
+
+		const Counter = ({ counter, increment, decrement }) => (
+			  <div>
+			    <p>Counter: {counter}</p>
+			    <button onClick={increment}>Increment</button>
+ 			   <button onClick={decrement}>Decrement</button>
+			  </div>
+		);
+
+		const mapStateToProps = (state) => ({
+ 			 counter: state.counter,
+		});
+
+		// Simplified mapDispatch using object shorthand
+		export default connect(mapStateToProps, { increment, decrement })(Counter);
+
+	19.Call useSelector Multiple Times in Function Components:
+		When retrieving data using the useSelector hook, prefer calling useSelector many times and retrieving smaller amounts of data, instead of having a single larger useSelector call that returns multiple results in an object. Unlike mapState, useSelector is not required to return an object, and having selectors read smaller values means it is less likely that a given state change will cause this component to render.
+
+	20.Use Static Typing:
+		Use a static type system like TypeScript or Flow rather than plain JavaScript. The type systems will catch many common mistakes, improve the documentation of your code, and ultimately lead to better long-term maintainability. 
+
+	21.Use the Redux DevTools Extension for Debugging:
+		Using Redux-devtools in chrome extension
+
+	22.Use Plain JavaScript Objects for state:
+		Prefer using plain JavaScript objects and arrays for your state tree
+
