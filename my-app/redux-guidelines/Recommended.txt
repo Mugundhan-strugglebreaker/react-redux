@@ -1,0 +1,34 @@
+Priority C Rules: Recommended
+
+	01.Write Action Types as domain/eventName:
+		Redux Toolkit's createSlice function currently generates action types that look like "domain/action", such as "todos/addTodo". Going forward, we suggest using the "domain/action" convention for readability.
+
+	02.Write Actions Using the flux Standard Action Convention:
+		  Should always put their data into a payload field
+            May have a meta field for additional info
+	          May have an error field to indicate the action represents a failure of some kind
+
+	03.Use Action Creators:
+		"Action creator" functions started with the original "Flux Architecture" approach. With Redux, action creators are not strictly required. Components and other logic can always call dispatch({type: "some/action"}) with the action object written inline.
+
+		like this 
+		// actionCreators.js
+               import { INCREMENT, DECREMENT, INCREMENT_BY_AMOUNT } from './actionTypes';
+
+		export const increment = () => ({ type: INCREMENT });
+
+		export const decrement = () => ({ type: DECREMENT });
+
+		export const incrementByAmount = (amount) => ({
+  			type: INCREMENT_BY_AMOUNT,
+			payload: amount,
+		});
+
+		Using createSlice we can avoid this boiler plate code and without need to declare this action creator explicitly.
+
+	04.Use RTK Query for Data Fetching:
+		Using RTK Query for Data Fetching
+	05.Use Thunks and Listeners for Other Asynchronous Logic
+	06.Move Complex Logic Outside Components
+	07.Use Selector Function to Read from Store State
+	08.Avoid Putting Form state in redux
